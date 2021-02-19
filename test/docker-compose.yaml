@@ -1,0 +1,23 @@
+version: "3.7"
+
+networks:
+  migrations:
+    driver: bridge
+
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: Password_123
+    networks:
+      - migrations
+
+  tests:
+    build:
+      dockerfile: Dockerfile
+      context: ..
+    volumes:
+      ./output:/tests
+    networks:
+      - migrations
