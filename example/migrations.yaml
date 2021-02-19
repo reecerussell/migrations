@@ -1,0 +1,8 @@
+provider: mssql
+migrations:
+  - name: Initial Creation
+    up: create_table.up.sql
+    down: create_table.down.sql
+  - name: Insert Into Table
+    up: add_record.up.sql
+    down: add_record.down.sql

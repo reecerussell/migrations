@@ -1,0 +1,3 @@
+CREATE TABLE [MyTable] (
+    [Name] VARCHAR(255) NOT NULL
+)

@@ -1,0 +1,1 @@
+DELETE FROM [MyTable] WHERE [Name] = 'Reece';

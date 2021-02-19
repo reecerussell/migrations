@@ -1,0 +1,1 @@
+INSERT INTO [MyTable] VALUES ('Reece');
