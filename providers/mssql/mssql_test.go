@@ -23,20 +23,20 @@ func TestGetAppliedMigrations_HavingOneAppliedMigration_ReturnsMigrationSuccessf
 		panic(err)
 	}
 
-	execute(db, `IF NOT EXISTS (SELECT [name] FROM sys.tables WHERE [name] = 'TestMigrationTable1')
+	execute(db, `IF NOT EXISTS (SELECT [name] FROM sys.tables WHERE [name] = '__MigrationHistory')
 		BEGIN
-			CREATE TABLE [TestMigrationTable1] (
+			CREATE TABLE [__MigrationHistory] (
 				[Id] INT NOT NULL IDENTITY(1,1) PRIMARY KEY,
 				[Name] VARCHAR(255) NOT NULL,
 				[DateApplied] DATETIME NOT NULL
 			);
 		END`)
 
-	execute(db, `INSERT INTO [TestMigrationTable1] ([Name],[DateApplied]) 
+	execute(db, `INSERT INTO [__MigrationHistory] ([Name],[DateApplied]) 
 		VALUES ('Test', GETUTCDATE())`)
 
 	t.Cleanup(func() {
-		execute(db, "DELETE FROM [TestMigrationTable1]; DROP TABLE [TestMigrationTable1];")
+		execute(db, "DELETE FROM [__MigrationHistory]; DROP TABLE [__MigrationHistory];")
 	})
 
 	p := &MSSQL{}

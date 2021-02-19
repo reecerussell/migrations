@@ -6,7 +6,9 @@ networks:
 
 services:
   mssql:
-    image: mcr.microsoft.com/mssql/server:2019-latest
+    build:
+      dockerfile: Dockerfile
+      context: mssql
     environment:
       ACCEPT_EULA: "Y"
       SA_PASSWORD: Password_123
@@ -15,9 +17,9 @@ services:
 
   tests:
     build:
-      dockerfile: Dockerfile
+      dockerfile: test/Dockerfile
       context: ..
     volumes:
-      ./output:/tests
+      - ./output:/tests
     networks:
       - migrations
