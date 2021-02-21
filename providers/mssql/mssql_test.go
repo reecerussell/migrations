@@ -13,7 +13,8 @@ import (
 	"github.com/reecerussell/migrations/providers/mssql"
 )
 
-var testConnectionString = os.Getenv("MSSQL_CONNECTION_STRING")
+// var testConnectionString = os.Getenv("MSSQL_CONNECTION_STRING")
+var testConnectionString = "sqlserver://dev:cA6EfDrJdhVhtnb8@34.105.141.251?database=open-social-dev"
 
 func execute(db *sql.DB, queryf string, inlineArgs ...interface{}) {
 	query := fmt.Sprintf(queryf, inlineArgs...)
@@ -388,6 +389,7 @@ func TestRollback_WithInvalidHistoryTableStructure_ReturnError(t *testing.T) {
 	t.Cleanup(func() {
 		os.Remove("TestRollback")
 
+		execute(db, "DROP TABLE [TestRollback];")
 		execute(db, "DROP TABLE [__MigrationHistory];")
 	})
 
