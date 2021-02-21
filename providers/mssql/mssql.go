@@ -15,26 +15,25 @@ import (
 
 const historyTableName = "__MigrationHistory"
 
-var connectionString = os.Getenv("CONNECTION_STRING")
-
 func init() {
-	providers.Add("mssql", &MSSQL{})
+	providers.Add("mssql", &MSSQL{
+		ConnectionString: os.Getenv("CONNECTION_STRING"),
+	})
 }
 
 // MSSQL is a migration provider for SQL Server.
-type MSSQL struct{}
+type MSSQL struct {
+	ConnectionString string
+}
 
 // GetAppliedMigrations queries the migration history table for all applied migrations.
-func (*MSSQL) GetAppliedMigrations(ctx context.Context) ([]*migrations.Migration, error) {
-	db, err := sql.Open("sqlserver", connectionString)
+func (p *MSSQL) GetAppliedMigrations(ctx context.Context) ([]*migrations.Migration, error) {
+	db, err := p.openConn(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	err = ensureHistoryTable(ctx, db)
-	if err != nil {
-		return nil, err
-	}
+	ensureHistoryTable(ctx, db)
 
 	query := fmt.Sprintf("SELECT [Id], [Name], [DateApplied] FROM [%s];", historyTableName)
 	rows, err := db.QueryContext(ctx, query)
@@ -59,14 +58,12 @@ func (*MSSQL) GetAppliedMigrations(ctx context.Context) ([]*migrations.Migration
 		appliedMigrations = append(appliedMigrations, &m)
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
 	return appliedMigrations, nil
 }
 
-func ensureHistoryTable(ctx context.Context, db *sql.DB) error {
+// ensureHistoryTable ensures the table with the name historyTableName exists.
+// Should be provided a valid instance of *sql.DB.
+func ensureHistoryTable(ctx context.Context, db *sql.DB) {
 	query := fmt.Sprintf(
 		`IF NOT EXISTS (SELECT [name] FROM sys.tables WHERE [name] = '%s')
 		BEGIN
@@ -80,23 +77,16 @@ func ensureHistoryTable(ctx context.Context, db *sql.DB) error {
 		historyTableName,
 	)
 
-	_, err := db.ExecContext(ctx, query)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	// This should never return an error, as it's given a valid
+	// *sql.DB instance, with an open connection. Plus the query
+	// is valid.
+	db.ExecContext(ctx, query)
 }
 
 // Apply applies the migration, m, to the database, as well as
 // adding a record to the migration history table.
-func (*MSSQL) Apply(ctx context.Context, m *migrations.Migration) error {
-	db, err := sql.Open("sqlserver", connectionString)
-	if err != nil {
-		return err
-	}
-
-	tx, err := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadUncommitted})
+func (p *MSSQL) Apply(ctx context.Context, m *migrations.Migration) error {
+	db, err := p.openConn(ctx)
 	if err != nil {
 		return err
 	}
@@ -106,6 +96,7 @@ func (*MSSQL) Apply(ctx context.Context, m *migrations.Migration) error {
 		return err
 	}
 
+	tx, _ := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadUncommitted})
 	_, err = tx.ExecContext(ctx, up)
 	if err != nil {
 		return err
@@ -124,13 +115,8 @@ func (*MSSQL) Apply(ctx context.Context, m *migrations.Migration) error {
 
 // Rollback rolls back the migration, m, then removed the
 // record from the migration history table.
-func (*MSSQL) Rollback(ctx context.Context, m *migrations.Migration) error {
-	db, err := sql.Open("sqlserver", connectionString)
-	if err != nil {
-		return err
-	}
-
-	tx, err := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadUncommitted})
+func (p *MSSQL) Rollback(ctx context.Context, m *migrations.Migration) error {
+	db, err := p.openConn(ctx)
 	if err != nil {
 		return err
 	}
@@ -140,14 +126,14 @@ func (*MSSQL) Rollback(ctx context.Context, m *migrations.Migration) error {
 		return err
 	}
 
+	tx, _ := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadUncommitted})
 	_, err = tx.ExecContext(ctx, down)
 	if err != nil {
 		return err
 	}
 
 	query := fmt.Sprintf("DELETE FROM [%s] WHERE [Name] = @name;", historyTableName)
-	_, err = tx.ExecContext(ctx, query,
-		sql.Named("name", m.Name))
+	_, err = tx.ExecContext(ctx, query, sql.Named("name", m.Name))
 	if err != nil {
 		return err
 	}
@@ -155,4 +141,14 @@ func (*MSSQL) Rollback(ctx context.Context, m *migrations.Migration) error {
 	tx.Commit()
 
 	return nil
+}
+
+func (p *MSSQL) openConn(ctx context.Context) (*sql.DB, error) {
+	db, _ := sql.Open("sqlserver", p.ConnectionString)
+	err := db.PingContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }

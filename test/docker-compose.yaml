@@ -19,6 +19,8 @@ services:
     build:
       dockerfile: test/Dockerfile
       context: ..
+    environment:
+      - MSSQL_CONNECTION_STRING: sqlserver://sa:Password_123@mssql?database=test
     volumes:
       - ./output:/tests
     networks:
