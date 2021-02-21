@@ -99,12 +99,14 @@ func (p *MSSQL) Apply(ctx context.Context, m *migrations.Migration) error {
 	tx, _ := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadUncommitted})
 	_, err = tx.ExecContext(ctx, up)
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
 	query := fmt.Sprintf("INSERT INTO [%s] ([Name],[DateApplied]) VALUES (@name, GETUTCDATE());", historyTableName)
 	_, err = tx.ExecContext(ctx, query, sql.Named("name", m.Name))
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
@@ -116,6 +118,8 @@ func (p *MSSQL) Apply(ctx context.Context, m *migrations.Migration) error {
 // Rollback rolls back the migration, m, then removed the
 // record from the migration history table.
 func (p *MSSQL) Rollback(ctx context.Context, m *migrations.Migration) error {
+	var err error
+
 	db, err := p.openConn(ctx)
 	if err != nil {
 		return err
@@ -129,12 +133,14 @@ func (p *MSSQL) Rollback(ctx context.Context, m *migrations.Migration) error {
 	tx, _ := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadUncommitted})
 	_, err = tx.ExecContext(ctx, down)
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
 	query := fmt.Sprintf("DELETE FROM [%s] WHERE [Name] = @name;", historyTableName)
 	_, err = tx.ExecContext(ctx, query, sql.Named("name", m.Name))
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
