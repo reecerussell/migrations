@@ -388,6 +388,7 @@ func TestRollback_WithInvalidHistoryTableStructure_ReturnError(t *testing.T) {
 	t.Cleanup(func() {
 		os.Remove("TestRollback")
 
+		execute(db, "DROP TABLE [TestRollback];")
 		execute(db, "DROP TABLE [__MigrationHistory];")
 	})
 
