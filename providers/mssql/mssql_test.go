@@ -4,12 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/reecerussell/migrations"
 	"github.com/reecerussell/migrations/providers/mssql"
 )
 
@@ -121,32 +119,16 @@ func TestApply(t *testing.T) {
 			[DateApplied] DATETIME NOT NULL
 		);`)
 
-	file, err := os.Create("TestApply")
-	if err != nil {
-		panic(err)
-	}
-
-	file.Write([]byte(`CREATE TABLE [TestApply] (
-		[Name] VARCHAR(255) NOT NULL
-	)`))
-	file.Close()
-
 	t.Cleanup(func() {
-		os.Remove("TestApply")
-
 		execute(db, "DROP TABLE [TestApply];")
 		execute(db, "DELETE FROM [__MigrationHistory];")
 		execute(db, "DROP TABLE [__MigrationHistory];")
 	})
 
-	m := &migrations.Migration{
-		Name:   "CreateTable",
-		UpFile: "TestApply",
-	}
-	ctx := migrations.NewContext(context.TODO(), ".")
-
 	p := &mssql.MSSQL{ConnectionString: testConnectionString}
-	err = p.Apply(ctx, m)
+	err = p.Apply(context.TODO(), "CreateTable", `CREATE TABLE [TestApply] (
+			[Name] VARCHAR(255) NOT NULL
+		)`)
 
 	t.Run("Returns No Error", func(t *testing.T) {
 		assert.NoError(t, err)
@@ -172,46 +154,16 @@ func TestApply(t *testing.T) {
 }
 
 func TestApply_GivenMigrationWithInvalidSQL_ReturnsError(t *testing.T) {
-	file, err := os.Create("TestApply_GivenMigrationWithInvalidSQL_ReturnsError")
-	if err != nil {
-		panic(err)
-	}
-
-	file.Write([]byte(`CREATE TABLE [TestApply] (
-		[Name] VARCHAR(255) NO`)) // incomplete/invalid sql
-	file.Close()
-
-	t.Cleanup(func() {
-		os.Remove("TestApply_GivenMigrationWithInvalidSQL_ReturnsError")
-	})
-
-	m := &migrations.Migration{
-		Name:   "CreateTable",
-		UpFile: "TestApply_GivenMigrationWithInvalidSQL_ReturnsError",
-	}
-	ctx := migrations.NewContext(context.TODO(), ".")
-
 	p := &mssql.MSSQL{ConnectionString: testConnectionString}
-	err = p.Apply(ctx, m)
+	err := p.Apply(context.TODO(), "TestApply", `CREATE TABLE [TestApply] (
+		[Name] VARCHAR(255) NO`)
 	assert.NotNil(t, err)
 }
 
 func TestApply_GivenInvalidConnectionString_ReturnsError(t *testing.T) {
 	p := &mssql.MSSQL{}
-	err := p.Apply(context.TODO(), nil)
+	err := p.Apply(context.TODO(), "", "")
 	assert.NotNil(t, err)
-}
-
-func TestApply_GivenMigrationWithMissingFile_ReturnError(t *testing.T) {
-	m := &migrations.Migration{
-		Name:   "CreateTable",
-		UpFile: "TestApply_GivenMigrationWithMissingFile_ReturnError",
-	}
-	ctx := migrations.NewContext(context.TODO(), ".")
-
-	p := &mssql.MSSQL{ConnectionString: testConnectionString}
-	err := p.Apply(ctx, m)
-	assert.True(t, os.IsNotExist(err))
 }
 
 func TestApply_WithInvalidHistoryTableStructure_ReturnError(t *testing.T) {
@@ -228,30 +180,14 @@ func TestApply_WithInvalidHistoryTableStructure_ReturnError(t *testing.T) {
 			[DateApplied] DATETIME NOT NULL
 		);`)
 
-	file, err := os.Create("TestApply")
-	if err != nil {
-		panic(err)
-	}
-
-	file.Write([]byte(`CREATE TABLE [TestApply] (
-			[Name] VARCHAR(255) NOT NULL
-		)`))
-	file.Close()
-
 	t.Cleanup(func() {
-		os.Remove("TestApply")
-
 		execute(db, "DROP TABLE [__MigrationHistory];")
 	})
 
-	m := &migrations.Migration{
-		Name:   "CreateTable",
-		UpFile: "TestApply",
-	}
-	ctx := migrations.NewContext(context.TODO(), ".")
-
 	p := &mssql.MSSQL{ConnectionString: testConnectionString}
-	err = p.Apply(ctx, m)
+	err = p.Apply(context.TODO(), "TestApply", `CREATE TABLE [TestApply] (
+			[Name] VARCHAR(255) NOT NULL
+		)`)
 	assert.NotNil(t, err)
 }
 
@@ -273,29 +209,13 @@ func TestRollback_GivenAppliedMigration_RollsBackSuucessful(t *testing.T) {
 			[Name] VARCHAR(255) NOT NULL
 		)`)
 
-	file, err := os.Create("TestRollback")
-	if err != nil {
-		panic(err)
-	}
-
-	file.Write([]byte(`DROP TABLE [TestRollback]`))
-	file.Close()
-
 	t.Cleanup(func() {
-		os.Remove("TestRollback")
-
 		execute(db, "DELETE FROM [__MigrationHistory];")
 		execute(db, "DROP TABLE [__MigrationHistory];")
 	})
 
-	m := &migrations.Migration{
-		Name:     "CreateTable",
-		DownFile: "TestRollback",
-	}
-	ctx := migrations.NewContext(context.TODO(), ".")
-
 	p := &mssql.MSSQL{ConnectionString: testConnectionString}
-	err = p.Rollback(ctx, m)
+	err = p.Rollback(context.TODO(), "CreateTable", `DROP TABLE [TestRollback]`)
 
 	t.Run("Returns No Error", func(t *testing.T) {
 		assert.NoError(t, err)
@@ -320,44 +240,14 @@ func TestRollback_GivenAppliedMigration_RollsBackSuucessful(t *testing.T) {
 
 func TestRollback_GivenInvalidConnectionString_ReturnsError(t *testing.T) {
 	p := &mssql.MSSQL{}
-	err := p.Rollback(context.TODO(), nil)
+	err := p.Rollback(context.TODO(), "", "")
 	assert.NotNil(t, err)
 }
 
 func TestRollback_GivenMigrationWithInvalidSQL_ReturnsError(t *testing.T) {
-	file, err := os.Create("TestRollback")
-	if err != nil {
-		panic(err)
-	}
-
-	file.Write([]byte(`DROP TABLE [TestRollback`)) // incomplete/invalid sql
-	file.Close()
-
-	t.Cleanup(func() {
-		os.Remove("TestRollback")
-	})
-
-	m := &migrations.Migration{
-		Name:     "CreateTable",
-		DownFile: "TestRollback",
-	}
-	ctx := migrations.NewContext(context.TODO(), ".")
-
 	p := &mssql.MSSQL{ConnectionString: testConnectionString}
-	err = p.Rollback(ctx, m)
+	err := p.Rollback(context.TODO(), "CreateTable", `DROP TABLE [TestRollback`) // invalid sql
 	assert.NotNil(t, err)
-}
-
-func TestRollback_GivenMigrationWithMissingFile_ReturnError(t *testing.T) {
-	m := &migrations.Migration{
-		Name:     "CreateTable",
-		DownFile: "TestRollback",
-	}
-	ctx := migrations.NewContext(context.TODO(), ".")
-
-	p := &mssql.MSSQL{ConnectionString: testConnectionString}
-	err := p.Rollback(ctx, m)
-	assert.True(t, os.IsNotExist(err))
 }
 
 func TestRollback_WithInvalidHistoryTableStructure_ReturnError(t *testing.T) {
@@ -378,28 +268,12 @@ func TestRollback_WithInvalidHistoryTableStructure_ReturnError(t *testing.T) {
 			[Name] VARCHAR(255) NOT NULL
 		)`)
 
-	file, err := os.Create("TestRollback")
-	if err != nil {
-		panic(err)
-	}
-
-	file.Write([]byte(`DROP TABLE [TestRollback];`))
-	file.Close()
-
 	t.Cleanup(func() {
-		os.Remove("TestRollback")
-
 		execute(db, "DROP TABLE [TestRollback];")
 		execute(db, "DROP TABLE [__MigrationHistory];")
 	})
 
-	m := &migrations.Migration{
-		Name:     "CreateTable",
-		DownFile: "TestRollback",
-	}
-	ctx := migrations.NewContext(context.TODO(), ".")
-
 	p := &mssql.MSSQL{ConnectionString: testConnectionString}
-	err = p.Rollback(ctx, m)
+	err = p.Rollback(context.TODO(), "CreateTable", "DROP TABLE [TestRollback];")
 	assert.NotNil(t, err)
 }

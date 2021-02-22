@@ -6,7 +6,7 @@ import (
 )
 
 // Apply applies all unapplied migrations, up to the target (if any), using the given provider, p.
-func Apply(ctx context.Context, cm []*Migration, p Provider, targetName string) error {
+func Apply(ctx context.Context, cm []*Migration, p Provider, fr FileReader, targetName string) error {
 	am, err := p.GetAppliedMigrations(ctx)
 	if err != nil {
 		return err
@@ -20,7 +20,13 @@ func Apply(ctx context.Context, cm []*Migration, p Provider, targetName string) 
 			continue
 		}
 
-		err := p.Apply(ctx, m)
+		content, err := fr.Read(m.UpFile)
+		if err != nil {
+			fmt.Printf("\nFailed to read migration file: %s.\n", m.UpFile)
+			return err
+		}
+
+		err = p.Apply(ctx, m.Name, content)
 		if err != nil {
 			fmt.Printf("\nFailed to apply migration %s.\n", m.Name)
 

@@ -6,7 +6,7 @@ import (
 )
 
 // Rollback rolls back all applied migrations, up to the target (if any), using the given provider, p.
-func Rollback(ctx context.Context, cm []*Migration, p Provider, targetName string) error {
+func Rollback(ctx context.Context, cm []*Migration, p Provider, fr FileReader, targetName string) error {
 	am, err := p.GetAppliedMigrations(ctx)
 	if err != nil {
 		return err
@@ -22,7 +22,13 @@ func Rollback(ctx context.Context, cm []*Migration, p Provider, targetName strin
 			continue
 		}
 
-		err := p.Rollback(ctx, m)
+		content, err := fr.Read(m.DownFile)
+		if err != nil {
+			fmt.Printf("\nFailed to read migration file: %s.\n", m.DownFile)
+			return err
+		}
+
+		err = p.Rollback(ctx, m.Name, content)
 		if err != nil {
 			fmt.Printf("\nFailed to rollback migration %s.\n", m.Name)
 

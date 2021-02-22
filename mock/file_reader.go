@@ -33,16 +33,16 @@ func (m *MockFileReader) EXPECT() *MockFileReaderMockRecorder {
 }
 
 // Read mocks base method
-func (m *MockFileReader) Read(directory, filename string) ([]byte, error) {
+func (m *MockFileReader) Read(filename string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Read", directory, filename)
-	ret0, _ := ret[0].([]byte)
+	ret := m.ctrl.Call(m, "Read", filename)
+	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Read indicates an expected call of Read
-func (mr *MockFileReaderMockRecorder) Read(directory, filename interface{}) *gomock.Call {
+func (mr *MockFileReaderMockRecorder) Read(filename interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*MockFileReader)(nil).Read), directory, filename)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*MockFileReader)(nil).Read), filename)
 }

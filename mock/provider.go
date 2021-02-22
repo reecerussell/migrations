@@ -50,29 +50,29 @@ func (mr *MockProviderMockRecorder) GetAppliedMigrations(ctx interface{}) *gomoc
 }
 
 // Apply mocks base method
-func (m_2 *MockProvider) Apply(ctx context.Context, m *migrations.Migration) error {
-	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "Apply", ctx, m)
+func (m *MockProvider) Apply(ctx context.Context, name, content string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Apply", ctx, name, content)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Apply indicates an expected call of Apply
-func (mr *MockProviderMockRecorder) Apply(ctx, m interface{}) *gomock.Call {
+func (mr *MockProviderMockRecorder) Apply(ctx, name, content interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Apply", reflect.TypeOf((*MockProvider)(nil).Apply), ctx, m)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Apply", reflect.TypeOf((*MockProvider)(nil).Apply), ctx, name, content)
 }
 
 // Rollback mocks base method
-func (m_2 *MockProvider) Rollback(ctx context.Context, m *migrations.Migration) error {
-	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "Rollback", ctx, m)
+func (m *MockProvider) Rollback(ctx context.Context, name, content string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Rollback", ctx, name, content)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Rollback indicates an expected call of Rollback
-func (mr *MockProviderMockRecorder) Rollback(ctx, m interface{}) *gomock.Call {
+func (mr *MockProviderMockRecorder) Rollback(ctx, name, content interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Rollback", reflect.TypeOf((*MockProvider)(nil).Rollback), ctx, m)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Rollback", reflect.TypeOf((*MockProvider)(nil).Rollback), ctx, name, content)
 }

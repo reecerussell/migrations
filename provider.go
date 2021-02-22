@@ -15,6 +15,6 @@ var (
 // to apply, rollback and get applied migrations.
 type Provider interface {
 	GetAppliedMigrations(ctx context.Context) ([]*Migration, error)
-	Apply(ctx context.Context, m *Migration) error
-	Rollback(ctx context.Context, m *Migration) error
+	Apply(ctx context.Context, name, content string) error
+	Rollback(ctx context.Context, name, content string) error
 }

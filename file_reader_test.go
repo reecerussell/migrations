@@ -20,15 +20,15 @@ func TestFileReaderRead(t *testing.T) {
 		os.Remove("FileReader")
 	})
 
-	fr := NewFileReader()
-	bytes, err := fr.Read(".", "FileReader")
-	assert.Equal(t, []byte("Hello World"), bytes)
+	fr := NewFileReader(".")
+	content, err := fr.Read("FileReader")
+	assert.Equal(t, "Hello World", content)
 	assert.NoError(t, err)
 }
 
 func TestFileReaderRead_GivenInvalidFilePath_ReturnsIsNotExist(t *testing.T) {
-	fr := NewFileReader()
-	bytes, err := fr.Read(".", "MissingFileName")
-	assert.Nil(t, bytes)
+	fr := NewFileReader(".")
+	content, err := fr.Read("MissingFileName")
+	assert.Equal(t, "", content)
 	assert.True(t, os.IsNotExist(err))
 }
