@@ -13,17 +13,30 @@ import (
 	_ "github.com/denisenkom/go-mssqldb"
 )
 
-const historyTableName = "__MigrationHistory"
+const defaultHistoryTableName = "__MigrationHistory"
 
 func init() {
-	providers.Add("mssql", &MSSQL{
-		ConnectionString: os.Getenv("CONNECTION_STRING"),
-	})
+	providers.Add("mssql", New)
 }
 
 // MSSQL is a migration provider for SQL Server.
 type MSSQL struct {
 	ConnectionString string
+	HistoryTableName string
+}
+
+// New returns a new instabnce of MSSQL. Implementing providers.ConstructorFunc,
+// New takes a migrations.ConfigMap, which is used to populate HistoryTableName.
+func New(conf migrations.ConfigMap) migrations.Provider {
+	historyTableName := defaultHistoryTableName
+	if v, _ := conf.String("historyTableName"); v != "" {
+		historyTableName = v
+	}
+
+	return &MSSQL{
+		ConnectionString: os.Getenv("CONNECTION_STRING"),
+		HistoryTableName: historyTableName,
+	}
 }
 
 // GetAppliedMigrations queries the migration history table for all applied migrations.
@@ -33,9 +46,9 @@ func (p *MSSQL) GetAppliedMigrations(ctx context.Context) ([]*migrations.Migrati
 		return nil, err
 	}
 
-	ensureHistoryTable(ctx, db)
+	p.ensureHistoryTable(ctx, db)
 
-	query := fmt.Sprintf("SELECT [Id], [Name], [DateApplied] FROM [%s];", historyTableName)
+	query := fmt.Sprintf("SELECT [Id], [Name], [DateApplied] FROM [%s];", p.HistoryTableName)
 	rows, err := db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
@@ -63,7 +76,7 @@ func (p *MSSQL) GetAppliedMigrations(ctx context.Context) ([]*migrations.Migrati
 
 // ensureHistoryTable ensures the table with the name historyTableName exists.
 // Should be provided a valid instance of *sql.DB.
-func ensureHistoryTable(ctx context.Context, db *sql.DB) {
+func (p *MSSQL) ensureHistoryTable(ctx context.Context, db *sql.DB) {
 	query := fmt.Sprintf(
 		`IF NOT EXISTS (SELECT [name] FROM sys.tables WHERE [name] = '%s')
 		BEGIN
@@ -73,8 +86,8 @@ func ensureHistoryTable(ctx context.Context, db *sql.DB) {
 				[DateApplied] DATETIME NOT NULL
 			);
 		END`,
-		historyTableName,
-		historyTableName,
+		p.HistoryTableName,
+		p.HistoryTableName,
 	)
 
 	// This should never return an error, as it's given a valid
@@ -98,7 +111,7 @@ func (p *MSSQL) Apply(ctx context.Context, name, content string) error {
 		return err
 	}
 
-	query := fmt.Sprintf("INSERT INTO [%s] ([Name],[DateApplied]) VALUES (@name, GETUTCDATE());", historyTableName)
+	query := fmt.Sprintf("INSERT INTO [%s] ([Name],[DateApplied]) VALUES (@name, GETUTCDATE());", p.HistoryTableName)
 	_, err = tx.ExecContext(ctx, query, sql.Named("name", name))
 	if err != nil {
 		tx.Rollback()
@@ -127,7 +140,7 @@ func (p *MSSQL) Rollback(ctx context.Context, name, content string) error {
 		return err
 	}
 
-	query := fmt.Sprintf("DELETE FROM [%s] WHERE [Name] = @name;", historyTableName)
+	query := fmt.Sprintf("DELETE FROM [%s] WHERE [Name] = @name;", p.HistoryTableName)
 	_, err = tx.ExecContext(ctx, query, sql.Named("name", name))
 	if err != nil {
 		tx.Rollback()
