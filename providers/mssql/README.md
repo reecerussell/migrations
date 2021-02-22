@@ -18,12 +18,6 @@ The structure of the table is as follows:
 | Name        | VARCHAR(255) | No         |               |
 | DateApplied | DATETIME     | No         |               |
 
-<style>
-table {
-    width: 100%
-}
-</style>
-
 ### Configuration
 
 When it comes to the migration configuration file, the `provider` property must be set to `mssql`.
