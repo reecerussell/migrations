@@ -68,23 +68,28 @@ func main() {
 		break
 	}
 
+	fmt.Printf("Migrate transactionally: %v\n", transactional)
+	fmt.Printf("Using context: %s\n", fileContext)
+
 	configPath := path.Join(fileContext, configFile)
 	config, err := migrations.LoadConfigFromFile(configPath)
 	if err != nil {
 		panic(err)
 	}
 
+	fmt.Printf("Using config file: %s\n", configFile)
+
 	p := providers.Get(config.Provider)
 	fmt.Printf("Using provider: %s\n", config.Provider)
 
-	ctx = migrations.NewContext(ctx, fileContext)
+	fr := migrations.NewFileReader(fileContext)
 
 	if upCommand.Parsed() {
-		err = migrations.Apply(ctx, config.Migrations, p, target)
+		err = migrations.Apply(ctx, config.Migrations, p, fr, target)
 	}
 
 	if downCommand.Parsed() {
-		err = migrations.Rollback(ctx, config.Migrations, p, target)
+		err = migrations.Rollback(ctx, config.Migrations, p, fr, target)
 	}
 
 	if err != nil {
