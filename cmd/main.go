@@ -16,21 +16,59 @@ import (
 	_ "github.com/reecerussell/migrations/providers/mssql"
 )
 
+const (
+	defaultFileContext   = "."
+	defaultConfigFile    = "migrations.yaml"
+	defaultTransactional = false
+	version              = "v0.1.0-alpha"
+)
+
 var (
-	migrationContext  string
-	migrationFilename string
-	target            string
-	rollback          bool
+	fileContext   string
+	configFile    string
+	target        string
+	transactional bool
 )
 
 func main() {
-	flag.StringVar(&migrationContext, "context", ".", "the migration context path")
-	flag.StringVar(&migrationFilename, "file", "migrations.yaml", "the migration config file")
-	flag.StringVar(&target, "target", "", "the target migration to apply or rollback")
-	flag.BoolVar(&rollback, "rollback", false, "determines wether the migrations will be rolled back")
-	flag.Parse()
+	ctx, cancel := context.WithCancel(context.Background())
+	go handleShutdown(cancel)
 
-	configPath := path.Join(migrationContext, migrationFilename)
+	upCommand := flag.NewFlagSet("up", flag.ExitOnError)
+	upCommand.StringVar(&fileContext, "context", defaultFileContext, "The execution path of the migrations")
+	upCommand.StringVar(&configFile, "file", defaultConfigFile, "The name of the migrations config file")
+	upCommand.StringVar(&target, "target", "", "The migration to apply")
+	upCommand.BoolVar(&transactional, "trans", defaultTransactional, "Determines wether if one migration in the list to apply fails, any applied in the list are rolled back.")
+
+	downCommand := flag.NewFlagSet("down", flag.ExitOnError)
+	downCommand.StringVar(&fileContext, "context", defaultFileContext, "The execution path of the migrations")
+	downCommand.StringVar(&configFile, "file", defaultConfigFile, "The name of the migrations config file")
+	downCommand.StringVar(&target, "target", "", "The migration to rollback")
+	downCommand.BoolVar(&transactional, "trans", false, "Determines wether if one migration in the list to rollback fails, any rolled backed in the list are reapplied.")
+
+	if len(os.Args) < 2 {
+		help()
+		os.Exit(2)
+	}
+
+	switch os.Args[1] {
+	case "up":
+		upCommand.Parse(os.Args[2:])
+		break
+	case "down":
+		downCommand.Parse(os.Args[2:])
+		break
+	case "version":
+		fmt.Printf("Migrations %s\n", version)
+		os.Exit(0)
+		break
+	default:
+		help()
+		os.Exit(0)
+		break
+	}
+
+	configPath := path.Join(fileContext, configFile)
 	config, err := migrations.LoadConfigFromFile(configPath)
 	if err != nil {
 		panic(err)
@@ -39,28 +77,55 @@ func main() {
 	p := providers.Get(config.Provider)
 	fmt.Printf("Using provider: %s\n", config.Provider)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	ctx = migrations.NewContext(ctx, migrationContext)
+	ctx = migrations.NewContext(ctx, fileContext)
 
-	go func() {
-		stop := make(chan os.Signal, 1)
-		signal.Notify(stop, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
-		<-stop
-
-		fmt.Printf("\rAborting...\n")
-		cancel()
-
-		os.Exit(1)
-	}()
-
-	if rollback {
-		err = migrations.Rollback(ctx, config.Migrations, p, target)
-	} else {
+	if upCommand.Parsed() {
 		err = migrations.Apply(ctx, config.Migrations, p, target)
+	}
+
+	if downCommand.Parsed() {
+		err = migrations.Rollback(ctx, config.Migrations, p, target)
 	}
 
 	if err != nil {
 		fmt.Printf("An error occured: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+func handleShutdown(cancel context.CancelFunc) {
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+	<-stop
+
+	fmt.Printf("\rAborting...\n")
+	cancel()
+
+	os.Exit(1)
+}
+
+func help() {
+	fmt.Printf("Migrations %s\n---\n\nCommands:\n\n", version)
+
+	// Up
+	fmt.Printf("up\n---\n")
+	fmt.Printf("description: Applies unapplied migrations.\n")
+	fmt.Printf("usage: %s up --context example --file migrations.yaml --trans\n", os.Args[0])
+	fmt.Printf("arguments:\n")
+	fmt.Printf("\tcontext\tThe execution path of the migrations (default: %s)\n", defaultFileContext)
+	fmt.Printf("\tfile\tThe name of the migrations config file (default: %s)\n", defaultConfigFile)
+	fmt.Printf("\ttarget\tThe migration to apply. This will apply all migrations leading up to the target.\n")
+	fmt.Printf("\ttrans\tDetermines wether to apply the migrations transactionally (default: %v)\n", defaultTransactional)
+
+	fmt.Printf("\n")
+
+	// Down
+	fmt.Printf("down\n---\n")
+	fmt.Printf("description: Rolls back applied migrations.\n")
+	fmt.Printf("usage: %s down --context example --file migrations.yaml --trans\n", os.Args[0])
+	fmt.Printf("arguments:\n")
+	fmt.Printf("\tcontext: The execution path of the migrations (default: %s)\n", defaultFileContext)
+	fmt.Printf("\tfile: The name of the migrations config file (default: %s)\n", defaultConfigFile)
+	fmt.Printf("\ttarget: The migration to rollback. This will rollback all subsequent migrations, leading up to the target.\n")
+	fmt.Printf("\ttrans: Determines wether to rollback the migrations transactionally (default: %v)\n", defaultTransactional)
 }
