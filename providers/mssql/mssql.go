@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 
 	"github.com/reecerussell/migrations"
 	"github.com/reecerussell/migrations/providers"
@@ -33,6 +34,7 @@ func New(conf migrations.ConfigMap) migrations.Provider {
 	}
 
 	return &MSSQL{
+		ConnectionString: os.Getenv("CONNECTION_STRING"),
 		HistoryTableName: historyTableName,
 	}
 }
