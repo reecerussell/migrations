@@ -85,26 +85,21 @@ func ensureHistoryTable(ctx context.Context, db *sql.DB) {
 
 // Apply applies the migration, m, to the database, as well as
 // adding a record to the migration history table.
-func (p *MSSQL) Apply(ctx context.Context, m *migrations.Migration) error {
+func (p *MSSQL) Apply(ctx context.Context, name, content string) error {
 	db, err := p.openConn(ctx)
 	if err != nil {
 		return err
 	}
 
-	up, err := m.Up(ctx)
-	if err != nil {
-		return err
-	}
-
 	tx, _ := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadUncommitted})
-	_, err = tx.ExecContext(ctx, up)
+	_, err = tx.ExecContext(ctx, content)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
 	query := fmt.Sprintf("INSERT INTO [%s] ([Name],[DateApplied]) VALUES (@name, GETUTCDATE());", historyTableName)
-	_, err = tx.ExecContext(ctx, query, sql.Named("name", m.Name))
+	_, err = tx.ExecContext(ctx, query, sql.Named("name", name))
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -117,7 +112,7 @@ func (p *MSSQL) Apply(ctx context.Context, m *migrations.Migration) error {
 
 // Rollback rolls back the migration, m, then removed the
 // record from the migration history table.
-func (p *MSSQL) Rollback(ctx context.Context, m *migrations.Migration) error {
+func (p *MSSQL) Rollback(ctx context.Context, name, content string) error {
 	var err error
 
 	db, err := p.openConn(ctx)
@@ -125,20 +120,15 @@ func (p *MSSQL) Rollback(ctx context.Context, m *migrations.Migration) error {
 		return err
 	}
 
-	down, err := m.Down(ctx)
-	if err != nil {
-		return err
-	}
-
 	tx, _ := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadUncommitted})
-	_, err = tx.ExecContext(ctx, down)
+	_, err = tx.ExecContext(ctx, content)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
 	query := fmt.Sprintf("DELETE FROM [%s] WHERE [Name] = @name;", historyTableName)
-	_, err = tx.ExecContext(ctx, query, sql.Named("name", m.Name))
+	_, err = tx.ExecContext(ctx, query, sql.Named("name", name))
 	if err != nil {
 		tx.Rollback()
 		return err
