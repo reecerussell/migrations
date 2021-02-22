@@ -10,6 +10,7 @@ import (
 // Config is used to map the migration config file.
 type Config struct {
 	Provider   string       `yaml:"provider"`
+	Config     ConfigMap    `yaml:"config"`
 	Migrations []*Migration `yaml:"migrations"`
 }
 
@@ -32,4 +33,26 @@ func LoadConfigFromFile(filename string) (*Config, error) {
 	}
 
 	return &config, nil
+}
+
+// ConfigMap represents a map[string]interface{}, providing
+// helper functions to access variables.
+type ConfigMap map[string]interface{}
+
+func (m ConfigMap) String(key string) (string, bool) {
+	if m == nil {
+		return "", false
+	}
+
+	v, ok := m[key]
+	if !ok {
+		return "", false
+	}
+
+	s, ok := v.(string)
+	if !ok {
+		return "", false
+	}
+
+	return s, true
 }
