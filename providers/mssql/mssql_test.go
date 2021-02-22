@@ -4,15 +4,16 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/reecerussell/migrations"
 	"github.com/reecerussell/migrations/providers/mssql"
 )
 
-// var testConnectionString = os.Getenv("MSSQL_CONNECTION_STRING")
-var testConnectionString = "sqlserver://dev:cA6EfDrJdhVhtnb8@34.105.141.251?database=open-social-dev"
+var testConnectionString = os.Getenv("MSSQL_CONNECTION_STRING")
 
 func execute(db *sql.DB, queryf string, inlineArgs ...interface{}) {
 	query := fmt.Sprintf(queryf, inlineArgs...)
@@ -20,6 +21,15 @@ func execute(db *sql.DB, queryf string, inlineArgs ...interface{}) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func TestNew(t *testing.T) {
+	cnf := migrations.ConfigMap{
+		"historyTableName": "MyMigrationsTable",
+	}
+	p := mssql.New(cnf).(*mssql.MSSQL)
+
+	assert.Equal(t, "MyMigrationsTable", p.HistoryTableName)
 }
 
 func TestGetAppliedMigrations_HavingOneAppliedMigration_ReturnsMigrationSuccessfully(t *testing.T) {
@@ -41,7 +51,10 @@ func TestGetAppliedMigrations_HavingOneAppliedMigration_ReturnsMigrationSuccessf
 		execute(db, "DELETE FROM [__MigrationHistory]; DROP TABLE [__MigrationHistory];")
 	})
 
-	p := &mssql.MSSQL{ConnectionString: testConnectionString}
+	p := &mssql.MSSQL{
+		ConnectionString: testConnectionString,
+		HistoryTableName: "__MigrationHistory",
+	}
 	appliedMigrations, err := p.GetAppliedMigrations(context.TODO())
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(appliedMigrations))
@@ -72,7 +85,10 @@ func TestGetAppliedMigrations_WithInvalidHistoryTableStructure_ReturnsError(t *t
 		execute(db, "DROP TABLE [__MigrationHistory];")
 	})
 
-	p := &mssql.MSSQL{ConnectionString: testConnectionString}
+	p := &mssql.MSSQL{
+		ConnectionString: testConnectionString,
+		HistoryTableName: "__MigrationHistory",
+	}
 	appliedMigrations, err := p.GetAppliedMigrations(context.TODO())
 	assert.Nil(t, appliedMigrations)
 	assert.NotNil(t, err)
@@ -101,7 +117,10 @@ func TestGetAppliedMigrations_WithInvalidHistoryTableColumnTypes_ReturnsError(t 
 		execute(db, "DROP TABLE [__MigrationHistory];")
 	})
 
-	p := &mssql.MSSQL{ConnectionString: testConnectionString}
+	p := &mssql.MSSQL{
+		ConnectionString: testConnectionString,
+		HistoryTableName: "__MigrationHistory",
+	}
 	appliedMigrations, err := p.GetAppliedMigrations(context.TODO())
 	assert.Nil(t, appliedMigrations)
 	assert.NotNil(t, err)
@@ -125,7 +144,10 @@ func TestApply(t *testing.T) {
 		execute(db, "DROP TABLE [__MigrationHistory];")
 	})
 
-	p := &mssql.MSSQL{ConnectionString: testConnectionString}
+	p := &mssql.MSSQL{
+		ConnectionString: testConnectionString,
+		HistoryTableName: "__MigrationHistory",
+	}
 	err = p.Apply(context.TODO(), "CreateTable", `CREATE TABLE [TestApply] (
 			[Name] VARCHAR(255) NOT NULL
 		)`)
@@ -154,7 +176,10 @@ func TestApply(t *testing.T) {
 }
 
 func TestApply_GivenMigrationWithInvalidSQL_ReturnsError(t *testing.T) {
-	p := &mssql.MSSQL{ConnectionString: testConnectionString}
+	p := &mssql.MSSQL{
+		ConnectionString: testConnectionString,
+		HistoryTableName: "__MigrationHistory",
+	}
 	err := p.Apply(context.TODO(), "TestApply", `CREATE TABLE [TestApply] (
 		[Name] VARCHAR(255) NO`)
 	assert.NotNil(t, err)
@@ -184,7 +209,10 @@ func TestApply_WithInvalidHistoryTableStructure_ReturnError(t *testing.T) {
 		execute(db, "DROP TABLE [__MigrationHistory];")
 	})
 
-	p := &mssql.MSSQL{ConnectionString: testConnectionString}
+	p := &mssql.MSSQL{
+		ConnectionString: testConnectionString,
+		HistoryTableName: "__MigrationHistory",
+	}
 	err = p.Apply(context.TODO(), "TestApply", `CREATE TABLE [TestApply] (
 			[Name] VARCHAR(255) NOT NULL
 		)`)
@@ -214,7 +242,10 @@ func TestRollback_GivenAppliedMigration_RollsBackSuucessful(t *testing.T) {
 		execute(db, "DROP TABLE [__MigrationHistory];")
 	})
 
-	p := &mssql.MSSQL{ConnectionString: testConnectionString}
+	p := &mssql.MSSQL{
+		ConnectionString: testConnectionString,
+		HistoryTableName: "__MigrationHistory",
+	}
 	err = p.Rollback(context.TODO(), "CreateTable", `DROP TABLE [TestRollback]`)
 
 	t.Run("Returns No Error", func(t *testing.T) {
@@ -245,7 +276,10 @@ func TestRollback_GivenInvalidConnectionString_ReturnsError(t *testing.T) {
 }
 
 func TestRollback_GivenMigrationWithInvalidSQL_ReturnsError(t *testing.T) {
-	p := &mssql.MSSQL{ConnectionString: testConnectionString}
+	p := &mssql.MSSQL{
+		ConnectionString: testConnectionString,
+		HistoryTableName: "__MigrationHistory",
+	}
 	err := p.Rollback(context.TODO(), "CreateTable", `DROP TABLE [TestRollback`) // invalid sql
 	assert.NotNil(t, err)
 }
@@ -273,7 +307,10 @@ func TestRollback_WithInvalidHistoryTableStructure_ReturnError(t *testing.T) {
 		execute(db, "DROP TABLE [__MigrationHistory];")
 	})
 
-	p := &mssql.MSSQL{ConnectionString: testConnectionString}
+	p := &mssql.MSSQL{
+		ConnectionString: testConnectionString,
+		HistoryTableName: "__MigrationHistory",
+	}
 	err = p.Rollback(context.TODO(), "CreateTable", "DROP TABLE [TestRollback];")
 	assert.NotNil(t, err)
 }

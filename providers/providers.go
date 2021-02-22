@@ -9,20 +9,26 @@ import (
 
 var (
 	mu   = sync.Mutex{}
-	prvs = make(map[string]migrations.Provider)
+	prvs = make(map[string]ConstructorFunc)
 )
 
-// Add loads a migration provider into memory, allowing it to then
-// be used to provide migrations.
-func Add(name string, p migrations.Provider) {
+// ConstructorFunc is used as a build func to build a provider,
+// giving it access to a ConfigMap, if needed.
+type ConstructorFunc func(migrations.ConfigMap) migrations.Provider
+
+// Add registers a provider by loading a constructur and name
+// into memory, which can then be consumer via the Get function.
+func Add(name string, p ConstructorFunc) {
 	mu.Lock()
 	defer mu.Unlock()
 
 	prvs[name] = p
 }
 
-// Get retrieves a provider with the given name.
-func Get(name string) migrations.Provider {
+// Get retrieves a provider with the given name, by building it
+// using the registered ConstructorFunc, providing it with
+// the given ConfigMap.
+func Get(name string, conf migrations.ConfigMap) migrations.Provider {
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -31,5 +37,5 @@ func Get(name string) migrations.Provider {
 		panic(fmt.Sprintf("no provider '%s' is registered", name))
 	}
 
-	return p
+	return p(conf)
 }

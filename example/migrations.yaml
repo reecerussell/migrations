@@ -1,4 +1,6 @@
 provider: mssql
+config:
+  historyTableName: MyMigrations
 migrations:
   - name: Initial Creation
     up: create_table.up.sql
