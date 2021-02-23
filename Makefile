@@ -1,4 +1,4 @@
-all: deps build
+all: deps run-unit-tests build-app
 test: run-tests
 
 deps:
@@ -10,6 +10,9 @@ generate:
 
 run-tests:
 	docker-compose up --build --exit-code-from tests
+
+run-unit-tests:
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go test . ./providers
 
 build:
 	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o migrations cmd/main.go

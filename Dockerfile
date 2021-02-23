@@ -1,21 +1,35 @@
-FROM golang:alpine AS build
+FROM golang:alpine AS base
 
-RUN apk update && apk add make
+RUN apk update && apk add --no-cache make
 
+ENV USER=app
+ENV UID=10001
+
+RUN adduser \
+    --disabled-password \
+    --gecos "" \
+    --home "/nonexistant" \
+    --shell "/sbin/nologin" \
+    --no-create-home \
+    --uid "${UID}" \
+    "${USER}"
+
+FROM base AS build
 WORKDIR /go/src/github.com/reecerussell/migrations
 COPY . .
 
-RUN make deps
-
-# Run unit tests except for provider specific tests, so those
-# will be covered in integration testing stages.
-RUN go test . ./providers
-
-RUN make build-app
+RUN make
 
 FROM scratch
 WORKDIR /app
 
-COPY --from=build /app/migrations .
+COPY --from=base /etc/passwd /etc/passwd
+COPY --from=base /etc/group /etc/group
+COPY --from=build /app/migrations migrations
+
+RUN mkdir -p /migrations
+
+USER ${UID}
 
 ENTRYPOINT [ "./migrations" ]
+CMD [ "up", "-context", "/migrations" ]

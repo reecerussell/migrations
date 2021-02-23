@@ -79,7 +79,7 @@ func main() {
 
 	fmt.Printf("Using config file: %s\n", configFile)
 
-	p := providers.Get(config.Provider)
+	p := providers.Get(config.Provider, config.Config)
 	fmt.Printf("Using provider: %s\n", config.Provider)
 
 	fr := migrations.NewFileReader(fileContext)
