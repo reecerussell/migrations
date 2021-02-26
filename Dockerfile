@@ -25,11 +25,11 @@ WORKDIR /app
 
 COPY --from=base /etc/passwd /etc/passwd
 COPY --from=base /etc/group /etc/group
-COPY --from=build /app/migrations migrations
+COPY --from=build /app/migrations main
 
 RUN mkdir -p /migrations
 
 USER ${UID}
 
-ENTRYPOINT [ "./migrations" ]
+ENTRYPOINT [ "./main" ]
 CMD [ "up", "-context", "/migrations" ]
