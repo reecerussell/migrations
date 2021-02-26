@@ -5,7 +5,7 @@ echo "Waiting for mssql to be ready..."
 sleep 45s
 
 echo "Running tests..."
-go test ./... -timeout 30s -race -coverprofile=cp.out
+go test ./... -timeout 30s -race -coverprofile=coverage.out -covermode=atomic
 test_exit_code=$?
 
 mkdir -p /tests
