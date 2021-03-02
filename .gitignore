@@ -1,3 +1,5 @@
 *.test
 migrations
+migrations.exe
+artifacts
 test/output
