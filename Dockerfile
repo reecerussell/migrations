@@ -14,6 +14,9 @@ RUN adduser \
     --uid "${UID}" \
     "${USER}"
 
+# Make directory to copy to final stage
+RUN mkdir -p /migrations
+
 FROM base AS build
 WORKDIR /go/src/github.com/reecerussell/migrations
 COPY . .
@@ -25,9 +28,8 @@ WORKDIR /app
 
 COPY --from=base /etc/passwd /etc/passwd
 COPY --from=base /etc/group /etc/group
+COPY --from=base /migrations /migrations
 COPY --from=build /app/migrations main
-
-RUN mkdir -p /migrations
 
 USER ${UID}
 
