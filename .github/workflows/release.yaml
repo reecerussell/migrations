@@ -36,9 +36,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Build
-        run: docker build -t reecerussell/migrations .
-
       - name: Integration Tests
         working-directory: test
         run: docker-compose up --build --exit-code-from tests

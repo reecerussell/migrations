@@ -9,7 +9,7 @@ go test ./... -timeout 30s -race -coverprofile=coverage.out -covermode=atomic
 test_exit_code=$?
 
 mkdir -p /tests
-mv cp.out /tests/cp.out
+mv coverage.out /tests/coverage.out
 
 if [[ $test_exit_code -ne 0 ]]; then
     echo "Tests failed!"
