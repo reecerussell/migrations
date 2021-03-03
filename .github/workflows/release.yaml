@@ -57,7 +57,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: coverage
-          path: coverage.out
+          path: .
 
       - name: Submit Report
         uses: codecov/codecov-action@v1.0.15
@@ -74,10 +74,10 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: docker-image
-          path: migrations.tar
+          path: .
 
       - name: Load Image
-        run: docker load -i migrations.tar
+        run: docker load < migrations.tar
 
       - name: Push Image
         run: |
