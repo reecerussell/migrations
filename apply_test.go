@@ -113,8 +113,8 @@ func TestApply_ApplyTargetMigration_SkipsFurtherMigrations(t *testing.T) {
 	testContent := "My Migration Content"
 	testCtx := context.Background()
 	testMigrations := []*migrations.Migration{
-		&migrations.Migration{Name: "One", UpFile: "MyFile"},
-		&migrations.Migration{Name: "Two"},
+		{Name: "One", UpFile: "MyFile"},
+		{Name: "Two"},
 	}
 
 	mockProvider := mock.NewMockProvider(ctrl)

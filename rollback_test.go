@@ -99,8 +99,8 @@ func TestRollback_RollbackTargetMigration_SkipsFurtherMigrations(t *testing.T) {
 	testContent := "My Migration Content"
 	testCtx := context.Background()
 	testMigrations := []*migrations.Migration{
-		&migrations.Migration{Name: "One"},
-		&migrations.Migration{Name: "Two", DownFile: "MyFile"},
+		{Name: "One"},
+		{Name: "Two", DownFile: "MyFile"},
 	}
 
 	mockProvider := mock.NewMockProvider(ctrl)
