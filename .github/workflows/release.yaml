@@ -59,13 +59,10 @@ jobs:
           name: coverage
           path: coverage.out
 
-      - name: ls
-        run: ls
-
       - name: Submit Report
         uses: codecov/codecov-action@v1.0.15
         with:
-          file: migrations/coverage.out
+          file: coverage.out
 
   publish:
     name: Publish Docker Image
@@ -79,11 +76,8 @@ jobs:
           name: docker-image
           path: migrations.tar
 
-      - name: ls
-        run: ls
-
       - name: Load Image
-        run: docker load < migrations.tar
+        run: docker load -i migrations.tar
 
       - name: Push Image
         run: |
@@ -98,6 +92,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
+      - name: Fetch Tags
+        run: git fetch --tags
 
       - name: Create Release
         shell: bash
