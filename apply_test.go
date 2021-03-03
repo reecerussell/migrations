@@ -54,7 +54,7 @@ func TestApply_FailsToGetAppliedMigrations_ReturnsError(t *testing.T) {
 	defer ctrl.Finish()
 
 	testCtx := context.Background()
-	testError := errors.New("an error occured")
+	testError := errors.New("an error occurred")
 
 	mockProvider := mock.NewMockProvider(ctrl)
 	mockProvider.EXPECT().GetAppliedMigrations(testCtx).Return(nil, testError)
@@ -93,7 +93,7 @@ func TestApply_FailsToApplyMigration_ReturnsError(t *testing.T) {
 		Name:   "MyMigration",
 		UpFile: "MyFile",
 	}
-	testError := errors.New("an error occured")
+	testError := errors.New("an error occurred")
 
 	mockProvider := mock.NewMockProvider(ctrl)
 	mockProvider.EXPECT().GetAppliedMigrations(testCtx).Return([]*migrations.Migration{}, nil)

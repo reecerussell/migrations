@@ -79,7 +79,7 @@ func TestRollback_WhereRollbackFails_ReturnsError(t *testing.T) {
 		Name:     "MyMigration",
 		DownFile: "MyFile",
 	}
-	testError := errors.New("an error occured")
+	testError := errors.New("an error occurred")
 
 	mockProvider := mock.NewMockProvider(ctrl)
 	mockProvider.EXPECT().GetAppliedMigrations(testCtx).Return([]*migrations.Migration{testMigration}, nil)
@@ -119,7 +119,7 @@ func TestRollback_FailsToGetAppliedMigrations_ReturnsError(t *testing.T) {
 	defer ctrl.Finish()
 
 	testCtx := context.Background()
-	testError := errors.New("an error occured")
+	testError := errors.New("an error occurred")
 
 	mockProvider := mock.NewMockProvider(ctrl)
 	mockProvider.EXPECT().GetAppliedMigrations(testCtx).Return(nil, testError)

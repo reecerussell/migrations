@@ -93,7 +93,7 @@ func main() {
 	}
 
 	if err != nil {
-		fmt.Printf("An error occured: %v\n", err)
+		fmt.Printf("An error occurred: %v\n", err)
 		os.Exit(1)
 	}
 }

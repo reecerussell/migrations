@@ -54,7 +54,7 @@ build_amd64() {
     main=cmd/main.go
     log_info "Building $main..."
     GOOS=$os GOARCH=amd64 CGO_ENABLED=0 go build -o $output $main &> out.txt
-    exit_if_error $? "An error occured while building" "$(cat out.txt && rm out.txt)"
+    exit_if_error $? "An error occurred while building" "$(cat out.txt && rm out.txt)"
 
     log_info "Built successfully!"
 }
@@ -66,11 +66,11 @@ download_modules() {
 
     log_info "Downloading..."
     go mod download &> out.txt
-    exit_if_error $? "An error occured while downloading modules" "$(cat out.txt && rm out.txt)"
+    exit_if_error $? "An error occurred while downloading modules" "$(cat out.txt && rm out.txt)"
 
     log_info "Verifying modules..."
     go mod verify > out.txt
-    exit_if_error $? "An error occured while verifying modules" "$(cat out.txt)"
+    exit_if_error $? "An error occurred while verifying modules" "$(cat out.txt)"
 
     out=$(cat out.txt && rm out.txt)
     if [[ $(echo $out | wc -l) -gt 0 ]]; then
@@ -89,7 +89,7 @@ create_release() {
 
     log_verbose "Making release request..."
     curl --data "$release_json" $gh_repo > out.txt
-    exit_if_error $? "An error occured while creating the release" "$(cat out.txt)"
+    exit_if_error $? "An error occurred while creating the release" "$(cat out.txt)"
 
     release_id=$(cat out.txt | jq '.id')
     if [[ "$release_id" == "null" ]]; then
@@ -118,7 +118,7 @@ create_release() {
             -H "Content-Type: application/octet-stream" \
             -H "Authorization: token $GITHUB_TOKEN" \
             "$asset" &> out.txt
-        exit_if_error $? "An error occured while uploading '$f'" "$(cat out.txt | tail -1 && rm out.txt)"
+        exit_if_error $? "An error occurred while uploading '$f'" "$(cat out.txt | tail -1 && rm out.txt)"
 
         log_verbose "Successfully posted artifact"
     done
