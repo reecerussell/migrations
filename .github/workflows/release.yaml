@@ -3,7 +3,24 @@ name: Release
 on:
   push:
     branches: [ master ]
+    paths:
+      - "*.go"
+      - "*Dockerfile"
+      - "*docker-compose.yaml"
+      - "Makefile"
+      - "go.mod"
+      - "go.sum"
+      - ".github/*"
+
   pull_request:
+    paths:
+      - "*.go"
+      - "*Dockerfile"
+      - "*docker-compose.yaml"
+      - "Makefile"
+      - "go.mod"
+      - "go.sum"
+      - ".github/*"
 
 jobs:
 
