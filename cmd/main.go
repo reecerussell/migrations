@@ -20,7 +20,7 @@ const (
 	defaultFileContext   = "."
 	defaultConfigFile    = "migrations.yaml"
 	defaultTransactional = false
-	version              = "v0.1.0-alpha"
+	version              = "v0.2.5"
 )
 
 var (
