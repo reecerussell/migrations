@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/reecerussell/migrations"
 	"github.com/reecerussell/migrations/providers"
@@ -94,10 +95,16 @@ func (p *MySQL) Apply(ctx context.Context, name, content string) error {
 		return err
 	}
 	tx, _ := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadUncommitted})
-	_, err = tx.ExecContext(ctx, content)
-	if err != nil {
-		tx.Rollback()
-		return err
+	statements := strings.Split(content, ";")
+	for _, statement := range statements {
+		if strings.TrimSpace(statement) == "" {
+			continue
+		}
+		_, err = tx.ExecContext(ctx, content)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
 	}
 	query := fmt.Sprintf("INSERT INTO `%s` (`name`,`date_applied`) VALUES (?, UTC_TIMESTAMP());", p.HistoryTableName)
 	_, err = tx.ExecContext(ctx, query, name)
