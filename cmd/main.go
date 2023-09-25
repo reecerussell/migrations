@@ -14,6 +14,7 @@ import (
 
 	// providers
 	_ "github.com/reecerussell/migrations/providers/mssql"
+	_ "github.com/reecerussell/migrations/providers/mysql"
 )
 
 const (
