@@ -15,12 +15,22 @@ services:
     networks:
       - migrations
 
+  mysql:
+    image: mysql:8
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: password123
+      MYSQL_DATABASE: testdb
+    networks:
+      - migrations
+
   tests:
     build:
       dockerfile: test/Dockerfile
       context: ..
     environment:
       MSSQL_CONNECTION_STRING: sqlserver://sa:Password_123@mssql?database=test
+      MYSQL_CONNECTION_STRING: "root:password123@tcp(mysql)/testdb?parseTime=true"
     volumes:
       - ./output:/tests
     networks:
