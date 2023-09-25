@@ -35,12 +35,12 @@ jobs:
         run: docker build -t reecerussell/migrations .
 
       - name: Save
-        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         run: docker save reecerussell/migrations:latest > migrations.tar
 
       - name: Archive
         uses: actions/upload-artifact@v2
-        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         with:
           name: docker-image
           path: migrations.tar
