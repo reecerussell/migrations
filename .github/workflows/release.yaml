@@ -1,8 +1,9 @@
 name: Release
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ master ]
+    branches: [master]
     paths:
       - "*.go"
       - "*Dockerfile"
@@ -23,7 +24,6 @@ on:
       - ".github/*"
 
 jobs:
-
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -63,7 +63,7 @@ jobs:
         with:
           name: coverage
           path: test/output/coverage.out
-    
+
   coverage:
     name: Upload Test Coverage
     runs-on: ubuntu-latest
