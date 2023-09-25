@@ -5,7 +5,7 @@ artifact_dir="artifacts"
 gh_api="https://api.github.com"
 gh_owner="reecerussell"
 gh_repo_name="migrations"
-gh_repo="$gh_api/repos/$gh_owner/$gh_repo_name/releases?access_token=$GITHUB_TOKEN"
+gh_repo="$gh_api/repos/$gh_owner/$gh_repo_name/releases"
 
 exit_if_error() {
     if [[ $1 -ne 0 ]]; then
@@ -88,7 +88,7 @@ create_release() {
     log_verbose "Release JSON: $release_json"
 
     log_verbose "Making release request..."
-    curl --data "$release_json" $gh_repo > out.txt
+    curl --data "$release_json" -H "Authorization: $GITHUB_TOKEN" $gh_repo > out.txt
     exit_if_error $? "An error occurred while creating the release" "$(cat out.txt)"
 
     release_id=$(cat out.txt | jq '.id')
