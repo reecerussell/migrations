@@ -24,6 +24,7 @@ func init() {
 type MySQL struct {
 	ConnectionString string
 	HistoryTableName string
+	PrintStatements  bool
 }
 
 // New returns a new instance of MySQL. Implementing providers.ConstructorFunc,
@@ -33,10 +34,14 @@ func New(conf migrations.ConfigMap) migrations.Provider {
 	if v, _ := conf.String("historyTableName"); v != "" {
 		historyTableName = v
 	}
-
+	printStatements := false
+	if v, _ := conf.String("printStatements"); v == "true" {
+		printStatements = true
+	}
 	return &MySQL{
 		ConnectionString: os.Getenv("CONNECTION_STRING"),
 		HistoryTableName: historyTableName,
+		PrintStatements:  printStatements,
 	}
 }
 
@@ -100,7 +105,10 @@ func (p *MySQL) Apply(ctx context.Context, name, content string) error {
 		if strings.TrimSpace(statement) == "" {
 			continue
 		}
-		_, err = tx.ExecContext(ctx, content)
+		if p.PrintStatements {
+			fmt.Printf("Executing the following statement:\n%s\n", statement)
+		}
+		_, err = tx.ExecContext(ctx, statement)
 		if err != nil {
 			tx.Rollback()
 			return err
