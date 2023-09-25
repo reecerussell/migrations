@@ -132,10 +132,19 @@ func (p *MySQL) Rollback(ctx context.Context, name, content string) error {
 		return err
 	}
 	tx, _ := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadUncommitted})
-	_, err = tx.ExecContext(ctx, content)
-	if err != nil {
-		tx.Rollback()
-		return err
+	statements := strings.Split(content, ";")
+	for _, statement := range statements {
+		if strings.TrimSpace(statement) == "" {
+			continue
+		}
+		if p.PrintStatements {
+			fmt.Printf("Executing the following statement:\n%s\n", statement)
+		}
+		_, err = tx.ExecContext(ctx, statement)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
 	}
 	query := fmt.Sprintf("DELETE FROM `%s` WHERE `name` = ?;", p.HistoryTableName)
 	_, err = tx.ExecContext(ctx, query, name)
