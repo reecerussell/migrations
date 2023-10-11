@@ -1,6 +1,6 @@
 FROM golang:alpine AS base
 
-RUN apk update && apk add --no-cache make
+RUN apk update && apk add --no-cache make ca-certificates tzdata && update-ca-certificates
 
 ENV USER=app
 ENV UID=10001
@@ -26,6 +26,8 @@ RUN make
 FROM scratch
 WORKDIR /app
 
+COPY --from=base /usr/share/zoneinfo /usr/share/zoneinfo
+COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=base /etc/passwd /etc/passwd
 COPY --from=base /etc/group /etc/group
 COPY --from=base /migrations /migrations
